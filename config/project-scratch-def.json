@@ -1,0 +1,16 @@
+{
+  "orgName": "arup.sarkar company",
+  "edition": "Developer",
+  "features": ["Communities","EnableSetPasswordInApi","SustainabilityCloud","SustainabilityApp","DevelopmentWave", "TCRMforSustainability"],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "mobileSettings": {
+      "enableS1EncryptedStoragePref2": false
+    },
+      "communitiesSettings": {
+          "enableNetworksEnabled": true
+      }    
+  }
+}
