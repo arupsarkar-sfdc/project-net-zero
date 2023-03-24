@@ -1,36 +1,51 @@
-public class EnergyController {
+public with sharing class EnergyController {
     // Move this settings to custom metadata
-    static String API_KEY = 'RP578ZAB4V4H76PQ4PSDN519JYW3';
-    static String INTERMODAL_URL = 'https://beta3.api.climatiq.io/freight/intermodal';
-    static String HOUSEHOLD_URL = 'https://beta3.api.climatiq.io/estimate';    
-    static String POST_METHOD = 'POST';
+    //static final String API_KEY = 'RP578ZAB4V4H76PQ4PSDN519JYW3';
+	static final String[] CLIMATEIQ_PARAMS = getClimateIQParams();
+	static final String API_KEY = CLIMATEIQ_PARAMS[0];
+    static final String INTERMODAL_URL = CLIMATEIQ_PARAMS[1];
+    static final String HOUSEHOLD_URL = CLIMATEIQ_PARAMS[2];    
+    static final String POST_METHOD = 'POST';
+
+	public EnergyController(String data) {
+		String body;
+		if(data.equals('getIntermodalFreightAirData')) {
+			body = getIntermodalFreightAirData();
+			getEnergyUse(body);
+		}else if(data.equals('getIntermodalFreightRoadData')) {
+			body = getIntermodalFreightRoadData();
+			getEnergyUse(body);
+		}else if(data.equals('getAirFreightData')) {
+			body = getAirFreightData();
+			getEnergyUse(body);
+		}
+	}
     
-    public static string getEnergyUse() {
+    private static string getEnergyUse(String payload) {
+
+		String method = POST_METHOD;
+		//String body = getIntermodalFreightAirData();
+		String body = payload;
+		String endpoint = INTERMODAL_URL;
+		Map<String, String> headers = new Map<String, String>();
+		headers.put('Content-Type', 'application/json');    
+		headers.put('Accept', 'application/json');
+		headers.put('Authorization', 'Bearer ' + API_KEY);
         String result = '';
-    	Http http = new Http();
-        HttpRequest req = new HttpRequest();
-        req.setHeader('Authorization', 'Bearer ' + API_KEY);
-        req.setMethod(POST_METHOD);
-        req.setEndpoint(INTERMODAL_URL);
-        /*
-        req.setEndpoint(HOUSEHOLD_URL);
-        GHGHouseholdData data = getGHGEmissionPerHouseholdData();
-        System.debug(JSON.serialize(data));
-		*/
-        req.setBody(getIntermodalFreightAirData());
         try{
-            HttpResponse res = http.send(req);
-            System.debug(LoggingLevel.DEBUG, res.getBody());
-            System.debug(LoggingLevel.DEBUG, res.getStatusCode());
-			System.debug(LoggingLevel.DEBUG, res.getStatus());
+			HttpCalloutController.method = method;
+			HttpCalloutController.body = body;
+			HttpCalloutController.endpoint = endpoint;
+			HttpCalloutController.headers = headers;
+			result = HttpCalloutController.executeCallout();
             
         }catch(Exception ex) {
-            String error_msg = '';
-            error_msg = 'Error Line Number : ' + ex.getLineNumber() + 
+            String error = '';
+            error = 'Error Line Number : ' + ex.getLineNumber() + 
                 		', Cause : ' + ex.getCause() + 
                 		', Message : ' + ex.getMessage() +
                 		', Stack Trace : ' + ex.getStackTraceString();
-            System.debug(LoggingLevel.ERROR, error_msg);
+            System.debug(LoggingLevel.ERROR, error);
         }
         
         return result;
@@ -110,6 +125,30 @@ public class EnergyController {
         GHGHouseholdData data = GHGHouseholdData.parse(JSONdata);
         return data;        
     }
+
+	private static String[] getClimateIQParams() {
+		String[] params = new String[3];
+        // Get the custom metadata object's schema descriptor
+        Schema.SObjectType mdtType = Climate_IQ_Setting__mdt.getSObjectType();
+		// Check if the current user has read permission for the custom metadata type
+		DescribeSObjectResult mdtTypeDesc = mdtType.getDescribe();
+		Boolean isAccessible = mdtTypeDesc.isAccessible();
+        // Check if the current user has read permission for the custom metadata type
+		if (isAccessible) {
+			List<Climate_IQ_Setting__mdt> metadataRecords = [
+				SELECT MasterLabel, DeveloperName, api_key__c, intermodal_url__c, household_url__c
+				FROM Climate_IQ_Setting__mdt
+				WITH SECURITY_ENFORCED
+				LIMIT 1
+				
+			];		
+			params[0] = metadataRecords[0].api_key__c;
+			params[1] = metadataRecords[0].intermodal_url__c;
+			params[2] = metadataRecords[0].household_url__c;			
+		}
+
+		return params;
+	}
     
 
 }
